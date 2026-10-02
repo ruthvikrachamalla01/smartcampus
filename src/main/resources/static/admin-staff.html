@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Admin - Maintenance Staff | Smart Campus</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="css/style.css">
+
+</head>
+
+
+<body>
+
+
+<!-- NAVBAR -->
+
+<nav class="sc-navbar">
+
+    <div class="sc-brand">
+        🏫 Smart Campus
+    </div>
+
+    <button
+        class="sc-btn sc-btn-danger"
+        onclick="logout()">
+
+        Logout
+
+    </button>
+
+</nav>
+
+
+
+<!-- MAIN -->
+
+<main class="sc-main">
+
+
+    <div class="sc-page-header">
+
+        <div>
+
+            <h2>Maintenance Staff</h2>
+
+            <p>
+                Add and manage campus maintenance employees.
+            </p>
+
+        </div>
+
+        <button
+            class="sc-btn sc-btn-primary"
+            onclick="loadStaff()">
+
+            🔄 Refresh
+
+        </button>
+
+    </div>
+
+
+
+    <!-- ADD STAFF CARD -->
+
+    <div class="sc-card mb-4">
+
+        <h4 class="mb-3">
+            Add Maintenance Staff
+        </h4>
+
+
+        <div
+            id="message"
+            class="mb-3">
+        </div>
+
+
+        <form id="staffForm">
+
+
+            <div class="row g-3">
+
+
+                <!-- EMPLOYEE ID -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Employee ID
+                    </label>
+
+                    <input
+                        type="text"
+                        id="employeeId"
+                        class="form-control sc-input"
+                        placeholder="Example: EMP001"
+                        required>
+
+                </div>
+
+
+
+                <!-- EMPLOYEE NAME -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Employee Name
+                    </label>
+
+                    <input
+                        type="text"
+                        id="employeeName"
+                        class="form-control sc-input"
+                        placeholder="Example: Rahul Kumar"
+                        required>
+
+                </div>
+
+
+
+                <!-- EMAIL -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Email
+                    </label>
+
+                    <input
+                        type="email"
+                        id="email"
+                        class="form-control sc-input"
+                        placeholder="employee@smartcampus.com"
+                        required>
+
+                </div>
+
+
+
+                <!-- PASSWORD -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Password
+                    </label>
+
+                    <input
+                        type="password"
+                        id="password"
+                        class="form-control sc-input"
+                        placeholder="Enter password"
+                        required>
+
+                </div>
+
+
+
+                <!-- WORK CATEGORY -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Work Category
+                    </label>
+
+                    <select
+                        id="workCategory"
+                        class="form-select sc-select"
+                        required>
+
+                        <option value="">
+                            Select Work Category
+                        </option>
+
+                        <option value="Electrical">
+                            Electrical
+                        </option>
+
+                        <option value="Plumbing">
+                            Plumbing
+                        </option>
+
+                        <option value="Furniture">
+                            Furniture
+                        </option>
+
+                        <option value="Classroom">
+                            Classroom
+                        </option>
+
+                        <option value="Internet / Wi-Fi">
+                            Internet / Wi-Fi
+                        </option>
+
+                        <option value="Cleaning">
+                            Cleaning
+                        </option>
+
+                        <option value="Other">
+                            Other
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+
+                <!-- ROLE -->
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Role
+                    </label>
+
+                    <input
+                        type="text"
+                        class="form-control sc-input"
+                        value="STAFF"
+                        readonly>
+
+                </div>
+
+
+            </div>
+
+
+
+            <div class="mt-4">
+
+                <button
+                    type="submit"
+                    class="sc-btn sc-btn-primary">
+
+                    ➕ Add Staff
+
+                </button>
+
+                <button
+                    type="reset"
+                    class="sc-btn sc-btn-secondary ms-2">
+
+                    Clear
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+
+
+    <!-- STAFF LIST -->
+
+    <div class="sc-card">
+
+
+        <div class="d-flex justify-content-between
+                    align-items-center mb-3">
+
+            <div>
+
+                <h4>
+                    Maintenance Staff List
+                </h4>
+
+                <p class="text-muted mb-0">
+                    Total staff:
+                    <strong id="staffCount">0</strong>
+                </p>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- SEARCH -->
+
+        <div class="mb-3">
+
+            <input
+                type="text"
+                id="searchInput"
+                class="form-control sc-input"
+                placeholder="Search employee ID, name, email or category..."
+                oninput="displayStaff()">
+
+        </div>
+
+
+
+        <!-- TABLE -->
+
+        <div class="table-responsive">
+
+            <table class="table sc-table align-middle">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Employee ID</th>
+
+                        <th>Employee Name</th>
+
+                        <th>Email</th>
+
+                        <th>Work Category</th>
+
+                        <th>Role</th>
+
+                        <th>Action</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="staffTable">
+
+                    <tr>
+
+                        <td
+                            colspan="6"
+                            class="text-center">
+
+                            Loading staff...
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+</main>
+
+
+
+<script>
+
+
+/* ============================
+   ADMIN LOGIN CHECK
+============================ */
+
+const userRole =
+    localStorage.getItem("userRole");
+
+
+if (userRole !== "ADMIN") {
+
+    alert("Admin access required.");
+
+    window.location.href =
+        "login.html";
+
+}
+
+
+
+/* ============================
+   VARIABLES
+============================ */
+
+let staffList = [];
+
+
+
+/* ============================
+   ADD STAFF
+============================ */
+
+document
+    .getElementById("staffForm")
+    .addEventListener(
+        "submit",
+        async function(event) {
+
+            event.preventDefault();
+
+
+            const employeeId =
+                document
+                    .getElementById("employeeId")
+                    .value
+                    .trim();
+
+
+            const name =
+                document
+                    .getElementById("employeeName")
+                    .value
+                    .trim();
+
+
+            const email =
+                document
+                    .getElementById("email")
+                    .value
+                    .trim();
+
+
+            const password =
+                document
+                    .getElementById("password")
+                    .value;
+
+
+            const workCategory =
+                document
+                    .getElementById("workCategory")
+                    .value;
+
+
+
+            if (!employeeId ||
+                !name ||
+                !email ||
+                !password ||
+                !workCategory) {
+
+                showMessage(
+                    "Please fill all fields.",
+                    "danger"
+                );
+
+                return;
+            }
+
+
+
+            try {
+
+
+                const response =
+                    await fetch(
+                        "/api/users/staff",
+                        {
+
+                            method: "POST",
+
+                            headers: {
+                                "Content-Type":
+                                    "application/json"
+                            },
+
+                            body: JSON.stringify({
+
+                                employeeId:
+                                    employeeId,
+
+                                name:
+                                    name,
+
+                                email:
+                                    email,
+
+                                password:
+                                    password,
+
+                                workCategory:
+                                    workCategory
+
+                            })
+
+                        }
+                    );
+
+
+
+                if (!response.ok) {
+
+                    const errorText =
+                        await response.text();
+
+                    console.error(
+                        errorText
+                    );
+
+                    throw new Error(
+                        "Staff creation failed"
+                    );
+
+                }
+
+
+
+                const newStaff =
+                    await response.json();
+
+
+
+                showMessage(
+                    `Staff added successfully!
+                     Employee ID: ${newStaff.employeeId}`,
+                    "success"
+                );
+
+
+
+                document
+                    .getElementById("staffForm")
+                    .reset();
+
+
+
+                await loadStaff();
+
+
+            }
+            catch(error) {
+
+                console.error(error);
+
+
+                showMessage(
+                    "Unable to add staff. " +
+                    "Check the email is not already registered " +
+                    "and make sure the Spring Boot server is running.",
+                    "danger"
+                );
+
+            }
+
+        }
+    );
+
+
+
+/* ============================
+   LOAD STAFF
+============================ */
+
+async function loadStaff() {
+
+    try {
+
+
+        const response =
+            await fetch("/api/users");
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Failed to load users"
+            );
+
+        }
+
+
+        const users =
+            await response.json();
+
+
+        staffList =
+            users.filter(
+                user =>
+                    user.role === "STAFF"
+            );
+
+
+        displayStaff();
+
+
+    }
+    catch(error) {
+
+        console.error(error);
+
+
+        document
+            .getElementById("staffTable")
+            .innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="6"
+                        class="text-center text-danger">
+
+                        Failed to load staff.
+
+                    </td>
+
+                </tr>
+
+            `;
+
+    }
+
+}
+
+
+
+/* ============================
+   DISPLAY STAFF
+============================ */
+
+function displayStaff() {
+
+    const table =
+        document
+            .getElementById("staffTable");
+
+
+    const search =
+        document
+            .getElementById("searchInput")
+            .value
+            .toLowerCase()
+            .trim();
+
+
+    const filtered =
+        staffList.filter(staff => {
+
+            const text = `
+
+                ${staff.employeeId || ""}
+
+                ${staff.name || ""}
+
+                ${staff.email || ""}
+
+                ${staff.workCategory || ""}
+
+            `.toLowerCase();
+
+
+            return text.includes(search);
+
+        });
+
+
+
+    document
+        .getElementById("staffCount")
+        .textContent =
+            staffList.length;
+
+
+
+    if (filtered.length === 0) {
+
+        table.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="6"
+                    class="text-center">
+
+                    No maintenance staff found.
+
+                </td>
+
+            </tr>
+
+        `;
+
+        return;
+
+    }
+
+
+
+    table.innerHTML =
+        filtered.map(staff => `
+
+            <tr>
+
+                <td>
+                    <strong>
+                        ${escapeHtml(
+                            staff.employeeId || "-"
+                        )}
+                    </strong>
+                </td>
+
+
+                <td>
+                    ${escapeHtml(
+                        staff.name || "-"
+                    )}
+                </td>
+
+
+                <td>
+                    ${escapeHtml(
+                        staff.email || "-"
+                    )}
+                </td>
+
+
+                <td>
+
+                    <span class="badge bg-info text-dark">
+
+                        ${escapeHtml(
+                            staff.workCategory || "Other"
+                        )}
+
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <span class="badge bg-primary">
+
+                        STAFF
+
+                    </span>
+
+                </td>
+
+
+                <td>
+
+                    <button
+                        class="btn btn-sm btn-outline-danger"
+                        onclick="deleteStaff(${staff.id})">
+
+                        Delete
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `).join("");
+
+}
+
+
+
+/* ============================
+   DELETE STAFF
+============================ */
+
+async function deleteStaff(id) {
+
+    const confirmed =
+        confirm(
+            "Are you sure you want to delete this staff member?"
+        );
+
+
+    if (!confirmed) {
+        return;
+    }
+
+
+    try {
+
+
+        const response =
+            await fetch(
+                `/api/users/${id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Delete failed"
+            );
+
+        }
+
+
+        showMessage(
+            "Staff deleted successfully.",
+            "success"
+        );
+
+
+        await loadStaff();
+
+
+    }
+    catch(error) {
+
+        console.error(error);
+
+
+        showMessage(
+            "Unable to delete staff.",
+            "danger"
+        );
+
+    }
+
+}
+
+
+
+/* ============================
+   MESSAGE
+============================ */
+
+function showMessage(
+    message,
+    type
+) {
+
+    document
+        .getElementById("message")
+        .innerHTML = `
+
+            <div class="alert alert-${type}">
+
+                ${escapeHtml(message)}
+
+            </div>
+
+        `;
+
+
+    setTimeout(() => {
+
+        document
+            .getElementById("message")
+            .innerHTML = "";
+
+    }, 4000);
+
+}
+
+
+
+/* ============================
+   HTML ESCAPE
+============================ */
+
+function escapeHtml(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "";
+    }
+
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
+
+
+
+/* ============================
+   LOGOUT
+============================ */
+
+function logout() {
+
+    localStorage.removeItem("userId");
+
+    localStorage.removeItem("userName");
+
+    localStorage.removeItem("userRole");
+
+    window.location.href =
+        "login.html";
+
+}
+
+
+
+/* ============================
+   INITIAL LOAD
+============================ */
+
+loadStaff();
+
+</script>
+
+</body>
+
+</html>

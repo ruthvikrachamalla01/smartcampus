@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin - Complaints | Smart Campus</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+
+
+<!-- ================================================= -->
+<!-- NAVBAR -->
+<!-- ================================================= -->
+
+<nav class="navbar navbar-dark bg-dark">
+
+    <div class="container">
+
+
+        <a
+            href="admin-dashboard.html"
+            class="navbar-brand brand">
+
+            <i class="bi bi-building me-2"></i>
+
+            Smart Campus Admin
+
+        </a>
+
+
+        <div>
+
+            <a
+                href="admin-dashboard.html"
+                class="btn btn-outline-light btn-sm me-2">
+
+                <i class="bi bi-speedometer2 me-1"></i>
+
+                Dashboard
+
+            </a>
+
+
+            <button
+                class="btn btn-danger btn-sm"
+                onclick="logout()">
+
+                <i class="bi bi-box-arrow-right me-1"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+<!-- MAIN -->
+<main class="sc-main">
+
+    <div class="sc-page-header">
+        <div>
+            <h2>Complaint Management</h2>
+            <p>View, assign and manage campus complaints.</p>
+        </div>
+
+        <button class="sc-btn sc-btn-primary" onclick="loadComplaints()">
+            🔄 Refresh
+        </button>
+    </div>
+
+
+    <!-- FILTERS -->
+    <div class="sc-card sc-filter mb-4">
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+
+                <label class="form-label">
+                    Search
+                </label>
+
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="form-control sc-input"
+                    placeholder="Search ID, category, location, staff..."
+                    oninput="displayComplaints()">
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <label class="form-label">
+                    Status
+                </label>
+
+                <select
+                    id="statusFilter"
+                    class="form-select sc-select"
+                    onchange="displayComplaints()">
+
+                    <option value="">All Status</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="ASSIGNED">Assigned</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="RESOLVED">Resolved</option>
+
+                </select>
+
+            </div>
+
+
+            <div class="col-md-2 d-flex align-items-end">
+
+                <button
+                    class="sc-btn sc-btn-secondary w-100"
+                    onclick="clearFilters()">
+
+                    Clear
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- COMPLAINT TABLE -->
+    <div class="sc-card">
+
+        <div class="table-responsive">
+
+            <table class="table sc-table align-middle">
+
+                <thead>
+
+                    <tr>
+                        <th>ID</th>
+                        <th>Category</th>
+                        <th>Location</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Assigned Staff</th>
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="complaintTable">
+
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            Loading complaints...
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</main>
+
+
+<!-- ASSIGN MODAL -->
+<div
+    class="modal fade"
+    id="assignModal"
+    tabindex="-1"
+    aria-hidden="true">
+
+    <div class="modal-dialog modal-lg">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Assign Complaint
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+
+            <div class="modal-body">
+
+                <div
+                    id="assignInfo"
+                    class="alert alert-info">
+                </div>
+
+
+                <label class="form-label fw-bold">
+                    Select Maintenance Staff
+                </label>
+
+                <select
+                    id="staffSelect"
+                    class="form-select">
+
+                </select>
+
+
+                <div
+                    id="staffMessage"
+                    class="small text-muted mt-2">
+                </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
+
+                    Cancel
+
+                </button>
+
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="confirmAssignment()">
+
+                    Assign Complaint
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- BOOTSTRAP -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+
+let complaints = [];
+let staffList = [];
+
+let selectedComplaintId = null;
+
+
+/* ============================
+   ADMIN LOGIN CHECK
+============================ */
+
+const userRole = localStorage.getItem("userRole");
+
+if (userRole !== "ADMIN") {
+
+    alert("Admin access required.");
+
+    window.location.href = "login.html";
+}
+
+
+/* ============================
+   LOAD DATA
+============================ */
+
+async function loadData() {
+
+    try {
+
+        const [complaintResponse, userResponse] =
+            await Promise.all([
+                fetch("/api/complaints"),
+                fetch("/api/users")
+            ]);
+
+
+        if (!complaintResponse.ok) {
+            throw new Error("Failed to load complaints");
+        }
+
+        if (!userResponse.ok) {
+            throw new Error("Failed to load users");
+        }
+
+
+        complaints = await complaintResponse.json();
+
+        const users = await userResponse.json();
+
+
+        staffList = users.filter(
+            user => user.role === "STAFF"
+        );
+
+
+        displayComplaints();
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        document.getElementById("complaintTable").innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-danger">
+                    Failed to load complaints.
+                </td>
+            </tr>
+        `;
+    }
+}
+
+
+/* ============================
+   LOAD COMPLAINTS
+============================ */
+
+function loadComplaints() {
+
+    loadData();
+
+}
+
+
+/* ============================
+   DISPLAY COMPLAINTS
+============================ */
+
+function displayComplaints() {
+
+    const table =
+        document.getElementById("complaintTable");
+
+    const search =
+        document.getElementById("searchInput")
+            .value
+            .toLowerCase()
+            .trim();
+
+    const status =
+        document.getElementById("statusFilter")
+            .value;
+
+
+    let filtered = complaints.filter(complaint => {
+
+        const assignedStaff =
+            getStaffById(complaint.assignedStaffId);
+
+
+        const staffText = assignedStaff
+            ? `${assignedStaff.employeeId || ""}
+               ${assignedStaff.name || ""}
+               ${assignedStaff.workCategory || ""}
+               ${assignedStaff.email || ""}`
+            : (complaint.assignedStaff || "");
+
+
+        const searchableText =
+            `${complaint.id || ""}
+             ${complaint.category || ""}
+             ${complaint.location || ""}
+             ${complaint.description || ""}
+             ${staffText}`
+                .toLowerCase();
+
+
+        const matchesSearch =
+            !search ||
+            searchableText.includes(search);
+
+
+        const matchesStatus =
+            !status ||
+            complaint.status === status;
+
+
+        return matchesSearch && matchesStatus;
+
+    });
+
+
+    if (filtered.length === 0) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center">
+                    No complaints found.
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
+
+
+    table.innerHTML = filtered.map(complaint => {
+
+        const assignedStaff =
+            getStaffById(complaint.assignedStaffId);
+
+
+        let assignedText = "Not Assigned";
+
+
+        if (assignedStaff) {
+
+            assignedText = `
+                <strong>
+                    ${escapeHtml(
+                        assignedStaff.employeeId || ""
+                    )}
+                </strong>
+                -
+                ${escapeHtml(
+                    assignedStaff.name || ""
+                )}
+                <br>
+
+                <small class="text-muted">
+                    ${escapeHtml(
+                        assignedStaff.workCategory || ""
+                    )}
+                </small>
+            `;
+
+        }
+        else if (complaint.assignedStaff) {
+
+            assignedText =
+                escapeHtml(complaint.assignedStaff);
+
+        }
+
+
+        return `
+
+            <tr>
+
+                <td>
+                    <strong>#${complaint.id}</strong>
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        complaint.category || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        complaint.location || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${escapeHtml(
+                        complaint.description || "-"
+                    )}
+                </td>
+
+                <td>
+                    ${getStatusBadge(
+                        complaint.status
+                    )}
+                </td>
+
+                <td>
+                    ${assignedText}
+                </td>
+
+                <td>
+
+                    <div class="d-flex gap-2 flex-wrap">
+
+                        <button
+                            class="btn btn-sm btn-primary"
+                            onclick="openAssignModal(${complaint.id})">
+
+                            Assign
+
+                        </button>
+
+
+                        <button
+                            class="btn btn-sm btn-outline-success"
+                            onclick="updateStatus(
+                                ${complaint.id},
+                                'RESOLVED'
+                            )">
+
+                            Resolve
+
+                        </button>
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `;
+
+    }).join("");
+
+}
+
+
+/* ============================
+   GET STAFF BY ID
+============================ */
+
+function getStaffById(staffId) {
+
+    if (!staffId) {
+        return null;
+    }
+
+    return staffList.find(
+        staff => Number(staff.id) === Number(staffId)
+    ) || null;
+}
+
+
+/* ============================
+   CATEGORY MATCHING
+============================ */
+
+function isCategoryMatch(
+    complaintCategory,
+    staffCategory
+) {
+
+    if (!complaintCategory ||
+        !staffCategory) {
+
+        return false;
+    }
+
+
+    const complaint =
+        complaintCategory
+            .toLowerCase()
+            .trim();
+
+    const staff =
+        staffCategory
+            .toLowerCase()
+            .trim();
+
+
+    /* Electrical */
+
+    if (
+        complaint.includes("electrical") &&
+        staff.includes("electrical")
+    ) {
+        return true;
+    }
+
+
+    /* Water / Plumbing */
+
+    if (
+        (
+            complaint.includes("water") ||
+            complaint.includes("plumbing")
+        )
+        &&
+        (
+            staff.includes("water") ||
+            staff.includes("plumbing")
+        )
+    ) {
+        return true;
+    }
+
+
+    /* Furniture */
+
+    if (
+        (
+            complaint.includes("furniture") ||
+            complaint.includes("broken")
+        )
+        &&
+        staff.includes("furniture")
+    ) {
+        return true;
+    }
+
+
+    /* Classroom */
+
+    if (
+        complaint.includes("classroom") &&
+        staff.includes("classroom")
+    ) {
+        return true;
+    }
+
+
+    /* Internet / Wi-Fi */
+
+    if (
+        (
+            complaint.includes("internet") ||
+            complaint.includes("wifi") ||
+            complaint.includes("wi-fi") ||
+            complaint.includes("network")
+        )
+        &&
+        (
+            staff.includes("internet") ||
+            staff.includes("wifi") ||
+            staff.includes("wi-fi")
+        )
+    ) {
+        return true;
+    }
+
+
+    /* Cleaning */
+
+    if (
+        complaint.includes("clean") &&
+        staff.includes("clean")
+    ) {
+        return true;
+    }
+
+
+    /* Other */
+
+    if (
+        complaint === "other" &&
+        staff === "other"
+    ) {
+        return true;
+    }
+
+
+    return false;
+}
+
+
+/* ============================
+   OPEN ASSIGN MODAL
+============================ */
+
+function openAssignModal(complaintId) {
+
+    selectedComplaintId = complaintId;
+
+
+    const complaint =
+        complaints.find(
+            item =>
+                Number(item.id) ===
+                Number(complaintId)
+        );
+
+
+    if (!complaint) {
+
+        alert("Complaint not found.");
+
+        return;
+    }
+
+
+    document.getElementById("assignInfo")
+        .innerHTML = `
+
+            <strong>
+                Complaint #${complaint.id}
+            </strong>
+            <br>
+
+            Category:
+            <strong>
+                ${escapeHtml(
+                    complaint.category || "-"
+                )}
+            </strong>
+
+            <br>
+
+            Location:
+            ${escapeHtml(
+                complaint.location || "-"
+            )}
+
+        `;
+
+
+    const matchingStaff =
+        staffList.filter(
+            staff =>
+                isCategoryMatch(
+                    complaint.category,
+                    staff.workCategory
+                )
+        );
+
+
+    const staffSelect =
+        document.getElementById("staffSelect");
+
+
+    staffSelect.innerHTML = "";
+
+
+    if (matchingStaff.length > 0) {
+
+        matchingStaff.forEach(staff => {
+
+            const option =
+                document.createElement("option");
+
+            option.value = staff.id;
+
+            option.textContent =
+                `${staff.employeeId || "No ID"} - ` +
+                `${staff.name || "No Name"} - ` +
+                `${staff.workCategory || "Other"}`;
+
+            staffSelect.appendChild(option);
+
+        });
+
+
+        document.getElementById("staffMessage")
+            .innerHTML =
+                `Showing staff matching the complaint category.`;
+
+    }
+    else {
+
+        /* If no matching staff exists,
+           show all available staff */
+
+        if (staffList.length === 0) {
+
+            staffSelect.innerHTML = `
+                <option value="">
+                    No staff available
+                </option>
+            `;
+
+            document.getElementById("staffMessage")
+                .innerHTML =
+                    "Please add maintenance staff first.";
+
+        }
+        else {
+
+            staffList.forEach(staff => {
+
+                const option =
+                    document.createElement("option");
+
+                option.value = staff.id;
+
+                option.textContent =
+                    `${staff.employeeId || "No ID"} - ` +
+                    `${staff.name || "No Name"} - ` +
+                    `${staff.workCategory || "Other"}`;
+
+                staffSelect.appendChild(option);
+
+            });
+
+
+            document.getElementById("staffMessage")
+                .innerHTML =
+                    "No staff matches this category. Showing all available staff.";
+        }
+
+    }
+
+
+    const modalElement =
+        document.getElementById("assignModal");
+
+
+    const modal =
+        bootstrap.Modal.getOrCreateInstance(
+            modalElement
+        );
+
+
+    modal.show();
+}
+
+
+/* ============================
+   CONFIRM ASSIGNMENT
+============================ */
+
+async function confirmAssignment() {
+
+    if (!selectedComplaintId) {
+
+        alert("No complaint selected.");
+
+        return;
+    }
+
+
+    const staffId =
+        document.getElementById("staffSelect").value;
+
+
+    if (!staffId) {
+
+        alert("Please select a staff member.");
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/complaints/${selectedComplaintId}/assign?staffId=${staffId}`,
+                {
+                    method: "PUT"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            const errorText =
+                await response.text();
+
+            console.error(errorText);
+
+            throw new Error(
+                "Assignment failed"
+            );
+        }
+
+
+        const updatedComplaint =
+            await response.json();
+
+
+        /* Update local complaint */
+
+        const index =
+            complaints.findIndex(
+                complaint =>
+                    Number(complaint.id) ===
+                    Number(selectedComplaintId)
+            );
+
+
+        if (index !== -1) {
+
+            complaints[index] =
+                updatedComplaint;
+
+        }
+
+
+        /* Close modal */
+
+        const modalElement =
+            document.getElementById("assignModal");
+
+
+        const modal =
+            bootstrap.Modal.getInstance(
+                modalElement
+            );
+
+
+        if (modal) {
+            modal.hide();
+        }
+
+
+        displayComplaints();
+
+
+        alert(
+            "Complaint assigned successfully!"
+        );
+
+
+        selectedComplaintId = null;
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Failed to assign complaint. " +
+            "Please check the backend."
+        );
+    }
+}
+
+
+/* ============================
+   UPDATE STATUS
+============================ */
+
+async function updateStatus(
+    complaintId,
+    status
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                `/api/complaints/${complaintId}/status?status=${status}`,
+                {
+                    method: "PUT"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Status update failed"
+            );
+        }
+
+
+        const updatedComplaint =
+            await response.json();
+
+
+        const index =
+            complaints.findIndex(
+                complaint =>
+                    Number(complaint.id) ===
+                    Number(complaintId)
+            );
+
+
+        if (index !== -1) {
+
+            complaints[index] =
+                updatedComplaint;
+
+        }
+
+
+        displayComplaints();
+
+
+        alert("Status updated successfully.");
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Failed to update complaint status."
+        );
+    }
+}
+
+
+/* ============================
+   STATUS BADGE
+============================ */
+
+function getStatusBadge(status) {
+
+    if (!status) {
+
+        return `
+            <span class="badge bg-secondary">
+                Unknown
+            </span>
+        `;
+    }
+
+
+    switch (status) {
+
+        case "PENDING":
+
+            return `
+                <span class="badge bg-warning text-dark">
+                    Pending
+                </span>
+            `;
+
+
+        case "ASSIGNED":
+
+            return `
+                <span class="badge bg-info text-dark">
+                    Assigned
+                </span>
+            `;
+
+
+        case "IN_PROGRESS":
+
+            return `
+                <span class="badge bg-primary">
+                    In Progress
+                </span>
+            `;
+
+
+        case "RESOLVED":
+
+            return `
+                <span class="badge bg-success">
+                    Resolved
+                </span>
+            `;
+
+
+        default:
+
+            return `
+                <span class="badge bg-secondary">
+                    ${escapeHtml(status)}
+                </span>
+            `;
+    }
+}
+
+
+/* ============================
+   CLEAR FILTERS
+============================ */
+
+function clearFilters() {
+
+    document.getElementById("searchInput")
+        .value = "";
+
+    document.getElementById("statusFilter")
+        .value = "";
+
+    displayComplaints();
+}
+
+
+/* ============================
+   HTML ESCAPE
+============================ */
+
+function escapeHtml(value) {
+
+    if (value === null ||
+        value === undefined) {
+
+        return "";
+    }
+
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+/* ============================
+   LOGOUT
+============================ */
+
+function logout() {
+
+    localStorage.removeItem("userId");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userRole");
+
+    window.location.href = "login.html";
+}
+
+
+/* ============================
+   INITIAL LOAD
+============================ */
+
+loadData();
+
+</script>
+
+</body>
+</html>
